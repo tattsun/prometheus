@@ -57,7 +57,7 @@ func (h *Handler) federation(w http.ResponseWriter, req *http.Request) {
 		Type:   dto.MetricType_UNTYPED.Enum(),
 	}
 
-	vector, err := h.storage.LastSampleForLabelMatchers(minTimestamp, matcherSets...)
+	vector, err := h.storage.LastSampleForLabelMatchers(h.queryCtx, minTimestamp, matcherSets...)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return

@@ -202,18 +202,24 @@ func TestTemplateExpansion(t *testing.T) {
 
 	storage, closer := local.NewTestStorage(t, 2)
 	defer closer.Close()
-	storage.Append(&model.Sample{
-		Metric: model.Metric{
-			model.MetricNameLabel: "metric",
-			"instance":            "a"},
-		Value: 11,
-	})
-	storage.Append(&model.Sample{
-		Metric: model.Metric{
-			model.MetricNameLabel: "metric",
-			"instance":            "b"},
-		Value: 21,
-	})
+	storage.Append(
+		context.Background(),
+		&model.Sample{
+			Metric: model.Metric{
+				model.MetricNameLabel: "metric",
+				"instance":            "a"},
+			Value: 11,
+		},
+	)
+	storage.Append(
+		context.Background(),
+		&model.Sample{
+			Metric: model.Metric{
+				model.MetricNameLabel: "metric",
+				"instance":            "b"},
+			Value: 21,
+		},
+	)
 	storage.WaitForIndexing()
 
 	engine := promql.NewEngine(storage, nil)

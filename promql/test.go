@@ -288,7 +288,7 @@ func (cmd *loadCmd) append(a storage.SampleAppender) {
 				Value:     smpl.Value,
 				Timestamp: smpl.Timestamp,
 			}
-			a.Append(s)
+			a.Append(context.Background(), s)
 		}
 	}
 }

@@ -228,7 +228,7 @@ func (api *API) labelValues(r *http.Request) (interface{}, *apiError) {
 	if !model.LabelNameRE.MatchString(name) {
 		return nil, &apiError{errorBadData, fmt.Errorf("invalid label name: %q", name)}
 	}
-	vals, err := api.Storage.LabelValuesForLabelName(model.LabelName(name))
+	vals, err := api.Storage.LabelValuesForLabelName(api.QueryCtx, model.LabelName(name))
 	if err != nil {
 		return nil, &apiError{errorExec, err}
 	}
@@ -274,7 +274,7 @@ func (api *API) series(r *http.Request) (interface{}, *apiError) {
 		matcherSets = append(matcherSets, matchers)
 	}
 
-	res, err := api.Storage.MetricsForLabelMatchers(start, end, matcherSets...)
+	res, err := api.Storage.MetricsForLabelMatchers(api.QueryCtx, start, end, matcherSets...)
 	if err != nil {
 		return nil, &apiError{errorExec, err}
 	}
@@ -298,7 +298,7 @@ func (api *API) dropSeries(r *http.Request) (interface{}, *apiError) {
 		if err != nil {
 			return nil, &apiError{errorBadData, err}
 		}
-		n, err := api.Storage.DropMetricsForLabelMatchers(matchers...)
+		n, err := api.Storage.DropMetricsForLabelMatchers(context.TODO(), matchers...)
 		if err != nil {
 			return nil, &apiError{errorExec, err}
 		}

@@ -25,6 +25,7 @@ import (
 
 	"github.com/prometheus/common/log"
 	"github.com/prometheus/common/model"
+	"golang.org/x/net/context"
 
 	"github.com/prometheus/prometheus/storage/metric"
 	"github.com/prometheus/prometheus/util/testutil"
@@ -53,7 +54,7 @@ func TestMatches(t *testing.T) {
 		fingerprints[i] = metric.FastFingerprint()
 	}
 	for _, s := range samples {
-		storage.Append(s)
+		storage.Append(context.Background(), s)
 	}
 	storage.WaitForIndexing()
 
@@ -194,6 +195,7 @@ func TestMatches(t *testing.T) {
 
 	for _, mt := range matcherTests {
 		metrics, err := storage.MetricsForLabelMatchers(
+			context.Background(),
 			model.Earliest, model.Latest,
 			mt.matchers,
 		)
@@ -218,6 +220,7 @@ func TestMatches(t *testing.T) {
 		}
 		// Smoketest for from/through.
 		metrics, err = storage.MetricsForLabelMatchers(
+			context.Background(),
 			model.Earliest, -10000,
 			mt.matchers,
 		)
@@ -228,6 +231,7 @@ func TestMatches(t *testing.T) {
 			t.Error("expected no matches with 'through' older than any sample")
 		}
 		metrics, err = storage.MetricsForLabelMatchers(
+			context.Background(),
 			10000, model.Latest,
 			mt.matchers,
 		)
@@ -243,6 +247,7 @@ func TestMatches(t *testing.T) {
 			through model.Time = 75
 		)
 		metrics, err = storage.MetricsForLabelMatchers(
+			context.Background(),
 			from, through,
 			mt.matchers,
 		)
@@ -302,7 +307,7 @@ func TestFingerprintsForLabels(t *testing.T) {
 		fingerprints[i] = metric.FastFingerprint()
 	}
 	for _, s := range samples {
-		storage.Append(s)
+		storage.Append(context.Background(), s)
 	}
 	storage.WaitForIndexing()
 
@@ -387,11 +392,14 @@ func BenchmarkLabelMatching(b *testing.B) {
 				met["label_c"] = lbl(k)
 				for l := 0; l < M; l++ {
 					met["label_d"] = lbl(l)
-					s.Append(&model.Sample{
-						Metric:    met.Clone(),
-						Timestamp: 0,
-						Value:     1,
-					})
+					s.Append(
+						context.Background(),
+						&model.Sample{
+							Metric:    met.Clone(),
+							Timestamp: 0,
+							Value:     1,
+						},
+					)
 				}
 			}
 		}
@@ -451,6 +459,7 @@ func BenchmarkLabelMatching(b *testing.B) {
 		benchLabelMatchingRes = []metric.Metric{}
 		for _, mt := range matcherTests {
 			benchLabelMatchingRes, err = s.MetricsForLabelMatchers(
+				context.Background(),
 				model.Earliest, model.Latest,
 				mt,
 			)
@@ -485,7 +494,7 @@ func TestRetentionCutoff(t *testing.T) {
 			Timestamp: insertStart.Add(time.Duration(i) * time.Minute), // 1 minute intervals.
 			Value:     1,
 		}
-		s.Append(smpl)
+		s.Append(context.Background(), smpl)
 	}
 	s.WaitForIndexing()
 
@@ -493,7 +502,7 @@ func TestRetentionCutoff(t *testing.T) {
 	if err != nil {
 		t.Fatalf("error creating label matcher: %s", err)
 	}
-	its, err := s.QueryRange(insertStart, now, lm)
+	its, err := s.QueryRange(context.Background(), insertStart, now, lm)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -559,7 +568,7 @@ func TestDropMetrics(t *testing.T) {
 				Timestamp: insertStart.Add(time.Duration(i) * time.Millisecond), // 1 millisecond intervals.
 				Value:     model.SampleValue(j),
 			}
-			s.Append(smpl)
+			s.Append(context.Background(), smpl)
 		}
 	}
 	s.WaitForIndexing()
@@ -581,7 +590,7 @@ func TestDropMetrics(t *testing.T) {
 
 	fpList := model.Fingerprints{m1.FastFingerprint(), m2.FastFingerprint(), fpToBeArchived}
 
-	n, err := s.DropMetricsForLabelMatchers(lm1)
+	n, err := s.DropMetricsForLabelMatchers(context.Background(), lm1)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -614,7 +623,7 @@ func TestDropMetrics(t *testing.T) {
 		t.Errorf("chunk file does not exist for fp=%v", fpList[2])
 	}
 
-	n, err = s.DropMetricsForLabelMatchers(lmAll)
+	n, err = s.DropMetricsForLabelMatchers(context.Background(), lmAll)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -680,7 +689,7 @@ func TestQuarantineMetric(t *testing.T) {
 				Timestamp: insertStart.Add(time.Duration(i) * time.Millisecond), // 1 millisecond intervals.
 				Value:     model.SampleValue(j),
 			}
-			s.Append(smpl)
+			s.Append(context.Background(), smpl)
 		}
 	}
 	s.WaitForIndexing()
@@ -763,7 +772,7 @@ func TestLoop(t *testing.T) {
 		t.Errorf("Error starting storage: %s", err)
 	}
 	for _, s := range samples {
-		storage.Append(s)
+		storage.Append(context.Background(), s)
 	}
 	storage.WaitForIndexing()
 	series, _ := storage.fpToSeries.get(model.Metric{}.FastFingerprint())
@@ -791,7 +800,7 @@ func testChunk(t *testing.T, encoding chunkEncoding) {
 	defer closer.Close()
 
 	for _, sample := range samples {
-		s.Append(sample)
+		s.Append(context.Background(), sample)
 	}
 	s.WaitForIndexing()
 
@@ -849,7 +858,7 @@ func testValueAtOrBeforeTime(t *testing.T, encoding chunkEncoding) {
 	defer closer.Close()
 
 	for _, sample := range samples {
-		s.Append(sample)
+		s.Append(context.Background(), sample)
 	}
 	s.WaitForIndexing()
 
@@ -927,7 +936,7 @@ func benchmarkValueAtOrBeforeTime(b *testing.B, encoding chunkEncoding) {
 	defer closer.Close()
 
 	for _, sample := range samples {
-		s.Append(sample)
+		s.Append(context.Background(), sample)
 	}
 	s.WaitForIndexing()
 
@@ -1009,7 +1018,7 @@ func testRangeValues(t *testing.T, encoding chunkEncoding) {
 	defer closer.Close()
 
 	for _, sample := range samples {
-		s.Append(sample)
+		s.Append(context.Background(), sample)
 	}
 	s.WaitForIndexing()
 
@@ -1165,7 +1174,7 @@ func benchmarkRangeValues(b *testing.B, encoding chunkEncoding) {
 	defer closer.Close()
 
 	for _, sample := range samples {
-		s.Append(sample)
+		s.Append(context.Background(), sample)
 	}
 	s.WaitForIndexing()
 
@@ -1213,7 +1222,7 @@ func testEvictAndPurgeSeries(t *testing.T, encoding chunkEncoding) {
 	defer closer.Close()
 
 	for _, sample := range samples {
-		s.Append(sample)
+		s.Append(context.Background(), sample)
 	}
 	s.WaitForIndexing()
 
@@ -1250,7 +1259,7 @@ func testEvictAndPurgeSeries(t *testing.T, encoding chunkEncoding) {
 
 	// Recreate series.
 	for _, sample := range samples {
-		s.Append(sample)
+		s.Append(context.Background(), sample)
 	}
 	s.WaitForIndexing()
 
@@ -1291,7 +1300,7 @@ func testEvictAndPurgeSeries(t *testing.T, encoding chunkEncoding) {
 
 	// Recreate series.
 	for _, sample := range samples {
-		s.Append(sample)
+		s.Append(context.Background(), sample)
 	}
 	s.WaitForIndexing()
 
@@ -1379,7 +1388,7 @@ func testEvictAndLoadChunkDescs(t *testing.T, encoding chunkEncoding) {
 	s.maxMemoryChunks = 1
 
 	for _, sample := range samples {
-		s.Append(sample)
+		s.Append(context.Background(), sample)
 	}
 	s.WaitForIndexing()
 
@@ -1445,7 +1454,7 @@ func benchmarkAppend(b *testing.B, encoding chunkEncoding) {
 	defer closer.Close()
 
 	for _, sample := range samples {
-		s.Append(sample)
+		s.Append(context.Background(), sample)
 	}
 }
 
@@ -1475,7 +1484,7 @@ func testFuzz(t *testing.T, encoding chunkEncoding) {
 
 		samples := createRandomSamples("test_fuzz", 10000)
 		for _, sample := range samples {
-			s.Append(sample)
+			s.Append(context.Background(), sample)
 		}
 		if !verifyStorageRandom(t, s, samples) {
 			return false
@@ -1542,11 +1551,11 @@ func benchmarkFuzz(b *testing.B, encoding chunkEncoding) {
 		end := samplesPerRun * (i + 1)
 		middle := (start + end) / 2
 		for _, sample := range samples[start:middle] {
-			s.Append(sample)
+			s.Append(context.Background(), sample)
 		}
 		verifyStorageRandom(b, s, samples[:middle])
 		for _, sample := range samples[middle:end] {
-			s.Append(sample)
+			s.Append(context.Background(), sample)
 		}
 		verifyStorageRandom(b, s, samples[:end])
 		verifyStorageSequential(b, s, samples)
@@ -1883,11 +1892,14 @@ func TestAppendOutOfOrder(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		gotErr := s.Append(&model.Sample{
-			Metric:    m,
-			Timestamp: test.timestamp,
-			Value:     test.value,
-		})
+		gotErr := s.Append(
+			context.Background(),
+			&model.Sample{
+				Metric:    m,
+				Timestamp: test.timestamp,
+				Value:     test.value,
+			},
+		)
 		if gotErr != test.wantErr {
 			t.Errorf("%s: got %q, want %q", test.name, gotErr, test.wantErr)
 		}

@@ -450,7 +450,7 @@ func (sl *scrapeLoop) append(samples model.Samples) {
 	)
 
 	for _, s := range samples {
-		if err := sl.appender.Append(s); err != nil {
+		if err := sl.appender.Append(context.TODO(), s); err != nil {
 			switch err {
 			case local.ErrOutOfOrderSample:
 				numOutOfOrder++
@@ -496,10 +496,10 @@ func (sl *scrapeLoop) report(start time.Time, duration time.Duration, err error)
 		Value:     model.SampleValue(duration.Seconds()),
 	}
 
-	if err := sl.reportAppender.Append(healthSample); err != nil {
+	if err := sl.reportAppender.Append(context.TODO(), healthSample); err != nil {
 		log.With("sample", healthSample).With("error", err).Warn("Scrape health sample discarded")
 	}
-	if err := sl.reportAppender.Append(durationSample); err != nil {
+	if err := sl.reportAppender.Append(context.TODO(), durationSample); err != nil {
 		log.With("sample", durationSample).With("error", err).Warn("Scrape duration sample discarded")
 	}
 }

@@ -15,13 +15,14 @@ package retrieval
 
 import (
 	"github.com/prometheus/common/model"
+	"golang.org/x/net/context"
 
 	"github.com/prometheus/prometheus/config"
 )
 
 type nopAppender struct{}
 
-func (a nopAppender) Append(*model.Sample) error {
+func (a nopAppender) Append(context.Context, *model.Sample) error {
 	return nil
 }
 

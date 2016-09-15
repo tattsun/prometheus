@@ -24,6 +24,7 @@ import (
 	"time"
 
 	"github.com/prometheus/common/model"
+	"golang.org/x/net/context"
 
 	"github.com/prometheus/prometheus/config"
 	"github.com/prometheus/prometheus/relabel"
@@ -240,7 +241,7 @@ type ruleLabelsAppender struct {
 	labels model.LabelSet
 }
 
-func (app ruleLabelsAppender) Append(s *model.Sample) error {
+func (app ruleLabelsAppender) Append(ctx context.Context, s *model.Sample) error {
 	for ln, lv := range app.labels {
 		if v, ok := s.Metric[ln]; ok && v != "" {
 			s.Metric[model.ExportedLabelPrefix+ln] = v
@@ -248,7 +249,7 @@ func (app ruleLabelsAppender) Append(s *model.Sample) error {
 		s.Metric[ln] = lv
 	}
 
-	return app.SampleAppender.Append(s)
+	return app.SampleAppender.Append(ctx, s)
 }
 
 type honorLabelsAppender struct {
@@ -259,14 +260,14 @@ type honorLabelsAppender struct {
 // Merges the sample's metric with the given labels if the label is not
 // already present in the metric.
 // This also considers labels explicitly set to the empty string.
-func (app honorLabelsAppender) Append(s *model.Sample) error {
+func (app honorLabelsAppender) Append(ctx context.Context, s *model.Sample) error {
 	for ln, lv := range app.labels {
 		if _, ok := s.Metric[ln]; !ok {
 			s.Metric[ln] = lv
 		}
 	}
 
-	return app.SampleAppender.Append(s)
+	return app.SampleAppender.Append(ctx, s)
 }
 
 // Applies a set of relabel configurations to the sample's metric
@@ -276,7 +277,7 @@ type relabelAppender struct {
 	relabelings []*config.RelabelConfig
 }
 
-func (app relabelAppender) Append(s *model.Sample) error {
+func (app relabelAppender) Append(ctx context.Context, s *model.Sample) error {
 	labels := relabel.Process(model.LabelSet(s.Metric), app.relabelings...)
 
 	// Check if the timeseries was dropped.
@@ -285,5 +286,5 @@ func (app relabelAppender) Append(s *model.Sample) error {
 	}
 	s.Metric = model.Metric(labels)
 
-	return app.SampleAppender.Append(s)
+	return app.SampleAppender.Append(ctx, s)
 }

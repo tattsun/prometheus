@@ -277,7 +277,7 @@ func (g *Group) eval() {
 				numDuplicates = 0
 			)
 			for _, s := range vector {
-				if err := g.opts.SampleAppender.Append(s); err != nil {
+				if err := g.opts.SampleAppender.Append(context.TODO(), s); err != nil {
 					switch err {
 					case local.ErrOutOfOrderSample:
 						numOutOfOrder++

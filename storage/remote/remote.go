@@ -20,6 +20,7 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/common/model"
+	"golang.org/x/net/context"
 
 	influx "github.com/influxdb/influxdb/client"
 
@@ -114,7 +115,7 @@ func (s *Storage) Stop() {
 }
 
 // Append implements storage.SampleAppender. Always returns nil.
-func (s *Storage) Append(smpl *model.Sample) error {
+func (s *Storage) Append(_ context.Context, smpl *model.Sample) error {
 	s.mtx.RLock()
 
 	var snew model.Sample

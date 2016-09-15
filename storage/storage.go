@@ -15,6 +15,7 @@ package storage
 
 import (
 	"github.com/prometheus/common/model"
+	"golang.org/x/net/context"
 )
 
 // SampleAppender is the interface to append samples to both, local and remote
@@ -26,7 +27,7 @@ type SampleAppender interface {
 	// implementation will simply drop samples if they cannot keep up with
 	// sending samples. Local storage implementations will only drop metrics
 	// upon unrecoverable errors.
-	Append(*model.Sample) error
+	Append(context.Context, *model.Sample) error
 	// NeedsThrottling returns true if the underlying storage wishes to not
 	// receive any more samples. Append will still work but might lead to
 	// undue resource usage. It is recommended to call NeedsThrottling once
@@ -54,10 +55,10 @@ type Fanout []SampleAppender
 // before proceeding with the next.
 // If any of the SampleAppenders returns an error, the first one is returned
 // at the end.
-func (f Fanout) Append(s *model.Sample) error {
+func (f Fanout) Append(ctx context.Context, s *model.Sample) error {
 	var err error
 	for _, a := range f {
-		if e := a.Append(s); e != nil && err == nil {
+		if e := a.Append(ctx, s); e != nil && err == nil {
 			err = e
 		}
 	}
