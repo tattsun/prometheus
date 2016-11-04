@@ -40,6 +40,9 @@ type Node interface {
 	// String representation of the node that returns the given node when parsed
 	// as part of a valid query.
 	String() string
+
+	lineNumber() int
+	linePosition() int
 }
 
 // Statement is a generic interface for all statements.
@@ -49,6 +52,14 @@ type Statement interface {
 	// stmt ensures that no other type accidentally implements the interface
 	stmt()
 }
+
+type ParseInfo struct {
+	lineNum int
+	linePos int
+}
+
+func (p *ParseInfo) lineNumber() int   { return p.lineNum }
+func (p *ParseInfo) linePosition() int { return p.linePos }
 
 // Statements is a list of statement nodes that implements Node.
 type Statements []Statement
