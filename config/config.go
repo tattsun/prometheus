@@ -1086,6 +1086,10 @@ func (c *AzureSDConfig) UnmarshalYAML(unmarshal func(interface{}) error) error {
 	return checkOverflow(c.XXX, "azure_sd_config")
 }
 
+type UrlSDConfig struct {
+	Urls []string
+}
+
 // RelabelAction is the action to be performed on relabeling.
 type RelabelAction string
 
