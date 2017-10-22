@@ -22,6 +22,7 @@ import (
 	"github.com/prometheus/prometheus/config"
 	"github.com/prometheus/prometheus/discovery"
 	"github.com/prometheus/prometheus/storage"
+	"time"
 )
 
 // TargetManager maintains a set of targets, starts and stops their scraping and
@@ -60,6 +61,7 @@ func NewTargetManager(app storage.SampleAppender, logger log.Logger) *TargetMana
 
 // Run starts background processing to handle target updates.
 func (tm *TargetManager) Run() {
+	time.Sleep(1 * time.Second)
 	tm.logger.Info("Starting target manager...")
 
 	tm.mtx.Lock()
